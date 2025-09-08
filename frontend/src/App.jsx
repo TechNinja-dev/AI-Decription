@@ -3,12 +3,10 @@ import React, { useState, useEffect } from 'react';
 // Main App Component
 export default function App() {
   const [activeView, setActiveView] = useState('home');
-  // State for both user's email and their unique ID
   const [userMail, setUserMail] = useState(localStorage.getItem('userMail')); 
   const [userId, setUserId] = useState(localStorage.getItem('userId'));
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Effect to keep localStorage in sync with the user's state
   useEffect(() => {
     if (userMail && userId) {
       localStorage.setItem('userMail', userMail);
@@ -19,14 +17,12 @@ export default function App() {
     }
   }, [userMail, userId]);
 
-  // Handle successful authentication by storing email and ID
   const handleAuthSuccess = ({ email, userId }) => {
     setUserMail(email);
     setUserId(userId);
     setShowAuthModal(false);
   };
 
-  // Clear user state on logout
   const handleLogout = () => {
     setUserMail(null);
     setUserId(null);
@@ -99,7 +95,6 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
       });
       const result = await response.json();
       if (response.ok) {
-        // Pass both email and user_id on success
         onAuthSuccess({ email: result.email, userId: result.user_id });
       } else {
         setMessage(result.detail || 'An error occurred.');
@@ -192,7 +187,7 @@ const Navbar = ({ setActiveView, userMail, onLogout, onLoginClick }) => {
             <div className="hidden md:block">
               <div className="flex items-baseline space-x-4">
                 <a href="#" onClick={(e) => {e.preventDefault(); setActiveView('home')}} className="text-gray-700 hover:bg-indigo-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                <a href="#" onClick={(e) => {e.preventDefault(); setActiveView('myStuff')}} className="text-gray-700 hover:bg-indigo-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">My Stuff</a>
+                <a href="#" onClick={(e) => {e.preventDefault(); setActiveView('myStuff')}} className="text-gray-700 hover:bg-indigo-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium">My Gallery</a>
               </div>
             </div>
           </div>
@@ -217,112 +212,155 @@ const Navbar = ({ setActiveView, userMail, onLogout, onLoginClick }) => {
 
 
 // --- HomePage ---
-const HomePage = ({ userId, onLoginClick }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [preview, setPreview] = useState('');
-  const [uploadStatus, setUploadStatus] = useState('');
+const HomePage = ({ userId }) => {
+    const [prompt, setPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+    const [generationStatus, setGenerationStatus] = useState('');
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setUploadStatus('');
-      const reader = new FileReader();
-      reader.onloadend = () => setPreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [preview, setPreview] = useState('');
+    const [isDescribing, setIsDescribing] = useState(false);
+    const [imageDescription, setImageDescription] = useState('');
+    
+    const handleGenerate = async () => {
+        if (!prompt.trim()) {
+            setGenerationStatus('Please enter a prompt.');
+            return;
+        }
+        setIsGenerating(true);
+        setGenerationStatus('Generating your image...');
+        setGeneratedImageUrl('');
 
-  const handleUpload = async () => {
-    if (!userId) {
-      setUploadStatus('Please log in to upload photos.');
-      return;
-    }
-    if (!selectedFile) {
-        setUploadStatus('Please select a file first.');
-        return;
-    }
-    setUploadStatus('Uploading...');
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    // Send user_id with the upload
-    formData.append('user_id', userId);
+        const url = `http://127.0.0.1:8000/generate?prompt=${encodeURIComponent(prompt)}${userId ? `&user_id=${userId}` : ''}`;
 
-    try {
-      const response = await fetch('http://127.0.0.1:8000/load', {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setUploadStatus(`Success! File ID: ${result.document_id}`);
-        setSelectedFile(null);
-        setPreview('');
-      } else {
-        const errorResult = await response.json();
-        setUploadStatus(`Upload failed: ${errorResult.detail || 'Server error'}`);
-      }
-    } catch (error) {
-      setUploadStatus('Upload failed. Is the server running?');
-    }
-  };
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (response.ok) {
+                setGeneratedImageUrl(`data:image/png;base64,${result.image_data}`);
+                setGenerationStatus(result.saved_to_gallery ? 'Image generated and saved to your gallery!' : 'Image generated successfully!');
+            } else {
+                throw new Error(result.detail || 'Failed to generate image.');
+            }
+        } catch (error) {
+            setGenerationStatus(`Error: ${error.message}`);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
-  const handleUploadAreaClick = (e) => {
-    if (!userId) {
-      e.preventDefault(); 
-      setUploadStatus('Please log in first to upload a photo.');
-    } else {
-      setUploadStatus(''); 
-    }
-  };
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            setImageDescription('');
+            const reader = new FileReader();
+            reader.onloadend = () => setPreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
 
-  return (
-     <div className="flex flex-col items-center justify-center py-12">
-      <div className="w-full max-w-2xl text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Share Your Moments</h1>
-        <p className="mt-4 text-lg leading-8 text-gray-600">
-          Upload a photo and let the world see your perspective. It's simple and fast.
-        </p>
-      </div>
-      <div className="mt-8 w-full max-w-lg">
-        <div className="relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative bg-white rounded-lg p-6">
-            <label htmlFor="file-upload" className="cursor-pointer" onClick={handleUploadAreaClick}>
-              <div className="flex justify-center items-center flex-col space-y-4 border-2 border-dashed border-gray-300 rounded-lg p-10 hover:border-indigo-500 transition duration-300">
-                {preview ? (
-                  <img src={preview} alt="Preview" className="max-h-48 rounded-lg object-contain" />
-                ) : (
-                  <>
-                    <svg className="w-16 h-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    <div className="text-center">
-                      <p className="text-indigo-600 font-semibold">Click to upload a file</p>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+    const handleDescribe = async () => {
+        if (!selectedFile) {
+            setImageDescription('Please select a file first.');
+            return;
+        }
+        setIsDescribing(true);
+        setImageDescription('Analyzing your image...');
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/load', {
+                method: 'POST',
+                body: formData,
+            });
+            const result = await response.json();
+            if (response.ok) {
+                setImageDescription(result.description);
+            } else {
+                 throw new Error(result.detail || 'Failed to get description.');
+            }
+        } catch (error) {
+            setImageDescription(`Error: ${error.message}`);
+        } finally {
+            setIsDescribing(false);
+        }
+    };
+
+    return (
+        <div className="w-full max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+                <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">AI Image Studio</h1>
+                <p className="mt-4 text-lg leading-8 text-gray-600">
+                    Create stunning visuals from text or get detailed descriptions of your images.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                {/* Left Section: Generation */}
+                <div className="bg-white rounded-lg shadow-xl p-6 lg:p-8 flex flex-col">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Generate Image from Text</h2>
+                    <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="e.g., A cinematic shot of a raccoon in a library, wearing a monocle"
+                        className="w-full flex-grow px-4 py-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 transition duration-300 min-h-[150px]"
+                    ></textarea>
+                    <div className="mt-6 flex flex-col items-center justify-center space-y-4">
+                        <button
+                            onClick={handleGenerate}
+                            className="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-300 disabled:bg-gray-400"
+                            disabled={isGenerating}
+                        >
+                            {isGenerating ? 'Generating...' : 'Generate Image'}
+                        </button>
+                        {generationStatus && <p className="text-sm text-gray-600 text-center">{generationStatus}</p>}
                     </div>
-                  </>
-                )}
-              </div>
-            </label>
-            <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} />
-          </div>
-        </div>
-        <div className="mt-6 flex flex-col items-center justify-center space-y-4">
-            {uploadStatus && !selectedFile && <p className="text-sm text-red-500">{uploadStatus}</p>}
-            
-            {selectedFile && (
-                <>
-                    <button onClick={handleUpload} className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
-                        Upload Photo
-                    </button>
-                    {uploadStatus && <p className="text-sm text-gray-600">{uploadStatus}</p>}
-                </>
+                </div>
+
+                {/* Right Section: Description */}
+                <div className="bg-white rounded-lg shadow-xl p-6 lg:p-8">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Get Image Description</h2>
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                        <div className="flex justify-center items-center flex-col space-y-4 border-2 border-dashed border-gray-300 rounded-lg p-10 hover:border-indigo-500 transition duration-300 min-h-[150px]">
+                            {preview ? (
+                                <img src={preview} alt="Preview" className="max-h-32 rounded-lg object-contain" />
+                            ) : (
+                                <div className="text-center text-gray-500">
+                                    <svg className="w-16 h-16 mx-auto text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                    <p className="mt-2 text-indigo-600 font-semibold">Click to upload an image</p>
+                                </div>
+                            )}
+                        </div>
+                    </label>
+                    <input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
+                     <div className="mt-6 flex flex-col items-center justify-center space-y-4">
+                         <button
+                            onClick={handleDescribe}
+                            className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 disabled:bg-gray-400"
+                            disabled={isDescribing || !selectedFile}
+                        >
+                            {isDescribing ? 'Analyzing...' : 'Get Description'}
+                        </button>
+                        {imageDescription && <p className="text-sm text-gray-600 bg-gray-100 p-4 rounded-md">{imageDescription}</p>}
+                    </div>
+                </div>
+            </div>
+
+             {/* Generated Image Display */}
+            {generatedImageUrl && (
+                <div className="mt-12">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Your Generated Image</h2>
+                    <div className="bg-white rounded-lg shadow-xl p-4 flex justify-center">
+                        <img src={generatedImageUrl} alt="Generated by AI" className="max-w-full md:max-w-2xl rounded-lg" />
+                    </div>
+                </div>
             )}
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 
@@ -344,7 +382,6 @@ const MyStuffPage = ({ userId }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // Send user_id for verification
         body: JSON.stringify({ user_id: userId }), 
       });
   
@@ -364,11 +401,9 @@ const MyStuffPage = ({ userId }) => {
       } else {
         const result = await response.json();
         setError(result.detail || 'Failed to delete image.');
-        console.error('Failed to delete image from backend.');
       }
     } catch (err) {
       setError('An error occurred while deleting the image.');
-      console.error('Error deleting image:', err);
     }
   };
 
@@ -377,7 +412,6 @@ const MyStuffPage = ({ userId }) => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch images using user_id
         const response = await fetch(`http://127.0.0.1:8000/images?user_id=${userId}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -406,14 +440,14 @@ const MyStuffPage = ({ userId }) => {
   return (
     <div className="w-full max-w-7xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">My Stuff</h1>
-        <p className="mt-4 text-lg leading-8 text-gray-600">A gallery of your uploaded moments, organized by date.</p>
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">My Gallery</h1>
+        <p className="mt-4 text-lg leading-8 text-gray-600">A collection of your AI-generated images, organized by date.</p>
       </div>
       {loading && <p className="text-center text-gray-500">Loading your images...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
       {!loading && !error && Object.keys(groupedImages).length === 0 && (
         <div className="p-8 text-center bg-white rounded-lg shadow-md border border-gray-200">
-          <p className="text-gray-500">You haven't uploaded anything yet!</p>
+          <p className="text-gray-500">You haven't generated any images yet!</p>
         </div>
       )}
       <div className="space-y-12">
@@ -453,7 +487,7 @@ const PleaseLoginPage = () => {
   return (
     <div className="text-center py-12">
       <h1 className="text-3xl font-bold text-gray-800">Please Log In</h1>
-      <p className="mt-4 text-lg text-gray-600">You need to be logged in to view this page.</p>
+      <p className="mt-4 text-lg text-gray-600">You need to be logged in to view your gallery.</p>
     </div>
   );
 };
