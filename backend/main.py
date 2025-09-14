@@ -32,12 +32,12 @@ images_collection = db["images"]
 # --- FastAPI App ---
 app = FastAPI()
 
-# origins = [
-#     "http://localhost:5173",
-#     "https://ai-decription.vercel.app/", 
-#     "https://www.ai-decription.vercel.app",
-# ]
-origins = ["*"]
+origins = [
+    "http://localhost:5173",
+    "https://ai-decription.vercel.app", 
+    "https://www.ai-decription.vercel.app",
+]
+
 
 app.add_middleware(
     CORSMiddleware,
