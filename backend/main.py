@@ -150,11 +150,11 @@ async def delete_image(image_id: str, request: DeleteImageRequest):
 
 @app.get("/generate")
 async def generate_image(prompt: str, user_id: Optional[str] = None):
-    if not img_key:
+    if not API_KEY:
         raise HTTPException(status_code=500, detail="API_KEY is not configured on the server.")
 
     # --- UPDATED TO USE GEMINI 2.5 FLASH IMAGE PREVIEW ---
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={img_key}"
+    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={API_KEY}"
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],

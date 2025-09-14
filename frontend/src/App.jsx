@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
+// --- API URL Configuration ---
+// IMPORTANT: For deployment, you will need to replace 'http://127.0.0.1:8000' 
+// with the live URL of your deployed backend service (e.g., from Render).
+const API_URL = 'http://127.0.0.1:8000';
+
 // Main App Component
 export default function App() {
   const [activeView, setActiveView] = useState('home');
@@ -84,7 +89,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
     setIsLoading(true);
     setMessage('');
 
-    const endpoint = isRegister ? 'http://127.0.0.1:8000/register' : 'http://127.0.0.1:8000/login';
+    const endpoint = isRegister ? `${API_URL}/register` : `${API_URL}/login`;
     const payload = { email, password };
 
     try {
@@ -232,7 +237,7 @@ const HomePage = ({ userId }) => {
         setGenerationStatus('Generating your image...');
         setGeneratedImageUrl('');
 
-        const url = `http://127.0.0.1:8000/generate?prompt=${encodeURIComponent(prompt)}${userId ? `&user_id=${userId}` : ''}`;
+        const url = `${API_URL}/generate?prompt=${encodeURIComponent(prompt)}${userId ? `&user_id=${userId}` : ''}`;
 
         try {
             const response = await fetch(url);
@@ -273,7 +278,7 @@ const HomePage = ({ userId }) => {
         formData.append('file', selectedFile);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/load', {
+            const response = await fetch(`${API_URL}/load`, {
                 method: 'POST',
                 body: formData,
             });
@@ -377,7 +382,7 @@ const MyStuffPage = ({ userId }) => {
     }
   
     try {
-      const response = await fetch(`http://127.0.0.1:8000/images/${imageId}`, {
+      const response = await fetch(`${API_URL}/images/${imageId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -412,7 +417,7 @@ const MyStuffPage = ({ userId }) => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`http://127.0.0.1:8000/images?user_id=${userId}`);
+        const response = await fetch(`${API_URL}/images?user_id=${userId}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
