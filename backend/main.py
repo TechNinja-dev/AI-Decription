@@ -35,6 +35,7 @@ app = FastAPI()
 origins = [
     "http://localhost:5173",
     "https://ai-decription.vercel.app/", 
+    "https://www.ai-decription.vercel.app",
 ]
 
 app.add_middleware(
