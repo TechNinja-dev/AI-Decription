@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // --- API URL Configuration ---
 // IMPORTANT: For deployment, you will need to replace 'http://127.0.0.1:8000' 
 // with the live URL of your deployed backend service (e.g., from Render).
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Main App Component
 export default function App() {
