@@ -4,7 +4,7 @@
     height="64"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#4f46e5"
+    stroke="#6366f1"
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
