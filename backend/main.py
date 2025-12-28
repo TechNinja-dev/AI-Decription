@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 from typing import Optional # Import Optional
-import google.generativeai as genai
+import google.genai as genai
 import requests
 import json
 
@@ -84,43 +84,6 @@ async def login(user: User):
     # Return the user's ID on login
     return {"email": user.email, "user_id": str(db_user["_id"]), "message": "Login successful"}
 
-@app.post("/load")
-async def describe_image(file: UploadFile = File(...)):
-    if not API_KEY:
-        raise HTTPException(status_code=500, detail="API_KEY is not configured on the server.")
-
-    contents = await file.read()
-    encoded_string = base64.b64encode(contents).decode("utf-8")
-
-    # Call the Vision API to get a description
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={API_KEY}"
-    
-    payload = {
-        "contents": [{
-            "parts": [
-                {"text": "Describe this image in detail."},
-                {"inline_data": {"mime_type": file.content_type, "data": encoded_string}}
-            ]
-        }]
-    }
-
-    description = "Description could not be generated."
-    try:
-        response = requests.post(API_URL, json=payload)
-        response.raise_for_status()
-        result = response.json()
-        
-        if result.get("candidates") and result["candidates"][0].get("content", {}).get("parts"):
-            description = result["candidates"][0]["content"]["parts"][0]["text"]
-        
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling Vision API: {e}")
-    except Exception as e:
-        print(f"Unexpected error processing Vision API response: {e}")
-
-    # Per your request, this endpoint no longer saves to the database.
-    # It only returns the generated description.
-    return { "description": description }
 
 @app.get("/images")
 async def get_images(user_id: str):
@@ -154,48 +117,91 @@ async def delete_image(image_id: str, request: DeleteImageRequest):
 
 @app.get("/generate")
 async def generate_image(prompt: str, user_id: Optional[str] = None):
-    if not API_KEY:
-        raise HTTPException(status_code=500, detail="API_KEY is not configured on the server.")
+    HF_API_KEY = os.getenv("HF_API_KEY")
+    if not HF_API_KEY:
+        raise HTTPException(status_code=500, detail="HF_API_KEY not set")
 
-    # --- UPDATED TO USE GEMINI 2.5 FLASH IMAGE PREVIEW ---
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key={API_KEY}"
-    
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseModalities": ["IMAGE"]
+    API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
+
+
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}"
+    }
+
+    payload = { "inputs": prompt }
+
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.text
+            )
+
+        image_bytes = response.content
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+        saved_to_gallery = False
+        if user_id:
+            images_collection.insert_one({
+                "user_id": user_id,
+                "filename": f"Generated: {prompt[:50]}...",
+                "content_type": "image/png",
+                "image_data": image_base64,
+                "uploaded_at": datetime.datetime.utcnow()
+            })
+            saved_to_gallery = True
+
+        return {
+            "image_data": image_base64,
+            "saved_to_gallery": saved_to_gallery
         }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/load")
+async def describe_image(file: UploadFile = File(...)):
+    HF_API_KEY = os.getenv("HF_API_KEY")
+    if not HF_API_KEY:
+        raise HTTPException(status_code=500, detail="HF_API_KEY not set")
+
+    API_URL = (
+        "https://api-inference.huggingface.co/models/"
+        "Salesforce/blip-image-captioning-base"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}"
     }
 
     try:
-        response = requests.post(API_URL, json=payload)
+        image_bytes = await file.read()
+
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            data=image_bytes
+        )
+
+        if response.status_code == 503:
+            return {
+                "description": "Model is loading, please try again in a few seconds."
+            }
+
         response.raise_for_status()
-        
+
         result = response.json()
-        
-        # --- UPDATED RESPONSE PARSING LOGIC ---
-        image_part = next((part for part in result.get("candidates", [{}])[0].get("content", {}).get("parts", []) if "inlineData" in part), None)
 
-        if image_part:
-            image_data = image_part["inlineData"]["data"]
-            saved_to_gallery = False
+        # HF returns a list
+        description = result[0].get(
+            "generated_text",
+            "Description could not be generated."
+        )
 
-            if user_id:
-                image_document = {
-                    "user_id": user_id,
-                    "filename": f"Generated: {prompt[:50]}...",
-                    "content_type": "image/png",
-                    "image_data": image_data,
-                    "uploaded_at": datetime.datetime.utcnow()
-                }
-                images_collection.insert_one(image_document)
-                saved_to_gallery = True
-            
-            return {"image_data": image_data, "saved_to_gallery": saved_to_gallery}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to parse image data from API response.")
+        return {"description": description}
 
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=503, detail=f"Failed to connect to image generation service: {e}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
