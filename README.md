@@ -1,48 +1,89 @@
-# AI Image Studio
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/artificialintelligence/artificialintelligence-original.svg" width="90" />
+</p>
 
-AI Image Studio is a full-stack web application that enables users to generate images from text prompts and obtain meaningful descriptions from uploaded images. The project is designed with a focus on clean architecture, efficient AI service usage, and scalability while maintaining a smooth user experience.
+<h1 align="center">AI Image Studio</h1>
 
-## Features
+<p align="center">
+  A full-stack AI application for image generation and intelligent image description
+</p>
 
-- Text-to-image generation using AI models  
-- Image-to-text description for uploaded images  
-- User authentication with secure password hashing  
-- Personal image gallery with delete functionality  
-- Optimized usage of free-tier AI services by splitting workloads  
+---
 
-## Tech Stack
+## 🧠 About the Project
+
+AI Image Studio is a full-stack web application that enables users to generate images from text prompts and extract meaningful descriptions from uploaded images. The project is built with a strong emphasis on clean architecture, optimized AI service usage, and scalability while maintaining a smooth user experience.
+
+---
+
+## ✨ Features
+
+- 🖼️ Text-to-image generation using AI models  
+- 📝 Image-to-text description for uploaded images  
+- 🔐 User authentication with encrypted password storage  
+- 🗂️ Personal image gallery with secure delete functionality  
+- ⚡ Optimized use of free-tier AI services by splitting workloads  
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
-- React (Vite)
-- Tailwind CSS
-- JavaScript (ES6+)
+<p>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg" width="40"/>
+  <img src="https://vitejs.dev/logo.svg" width="40"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" width="40"/>
+  <img src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.6ea76c2c.svg" width="40"/>
+</p>
 
 ### Backend
-- FastAPI
-- MongoDB
-- Pydantic
-- Passlib (bcrypt)
+<p>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" width="40"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/fastapi/fastapi-original.svg" width="40"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" width="40"/>
+</p>
 
 ### AI Services
-- Hugging Face Inference API (Stable Diffusion XL) for image generation
-- Image captioning model for image description
+<p>
+  <img src="https://huggingface.co/front/assets/huggingface_logo.svg" width="40"/>
+</p>
 
-## Architecture
+---
 
-The frontend communicates with a FastAPI backend that manages authentication, database operations, and AI service interactions. AI workloads are intentionally split across different services to reduce dependency on a single provider and to improve performance and reliability while staying within free-tier limits.
+## 🧩 Architecture
 
-## Objectives
+The frontend communicates with a FastAPI backend responsible for authentication, database operations, and AI service orchestration.  
+AI workloads are intentionally split across different services to reduce dependency on a single provider, improve reliability, and optimize performance within free-tier limits.
+
+---
+
+## 🎯 Objectives
 
 - Build a real-world AI-powered web application  
-- Practice full-stack development with modern tools  
-- Efficiently utilize free-tier AI services  
-- Implement secure authentication and data handling  
-- Design a scalable and maintainable system  
+- Gain hands-on experience with full-stack development  
+- Optimize AI usage without paid APIs  
+- Implement secure authentication and ownership validation  
+- Design a scalable and maintainable backend architecture  
 
-## Contact
+---
+
+## 📬 Contact
+
+<p>
+  <a href="https://github.com/TechNinja-dev">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/github/github-original.svg" width="40"/>
+  </a>
+  <a href="https://www.linkedin.com/in/your-linkedin-id">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linkedin/linkedin-original.svg" width="40"/>
+  </a>
+  <a href="https://your-portfolio-link.com">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/chrome/chrome-original.svg" width="40"/>
+  </a>
+</p>
 
 **Prakhar Srivastava**  
-GitHub: https://github.com/TechNinja-dev  
-Email: 
-LinkedIn: 
-Portfolio: 
+Full-Stack Developer | AI Enthusiast  
+
+---
+
+⭐ If you like this project, consider starring the repository.
