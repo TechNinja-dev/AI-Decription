@@ -7,5 +7,5 @@ bcrypt==3.2.0
 python-dotenv
 requests
 python-multipart
-google-generativeai
+# google-generativeai
 

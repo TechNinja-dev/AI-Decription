@@ -9,7 +9,6 @@ from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 from typing import Optional # Import Optional
-import google.genai as genai
 import requests
 import json
 
