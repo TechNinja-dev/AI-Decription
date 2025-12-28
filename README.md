@@ -75,10 +75,10 @@ AI workloads are intentionally split across different services to reduce depende
 <p>
   <a href="https://github.com/TechNinja-dev">
     <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/github/github-original.svg" width="40"/>
-  </a>
+  </a><br>
   <a href="https://www.linkedin.com/in/your-linkedin-id">
     <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linkedin/linkedin-original.svg" width="40"/>
-  </a>
+  </a> <br>
   <a href="https://your-portfolio-link.com">
     <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/chrome/chrome-original.svg" width="40"/>
   </a>
